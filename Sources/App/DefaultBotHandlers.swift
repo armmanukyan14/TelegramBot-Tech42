@@ -23,8 +23,6 @@ final class DefaultBotHandlers {
         commandiOSHandler(app: app, bot: bot)
         commandRegisteriOSHandler(app: app, bot: bot)
     }
-    
-    // aaa
 
     // MARK: - Default
     

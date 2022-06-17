@@ -13,7 +13,6 @@ let package = Package(
         .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0-rc"),
         .package(url: "https://github.com/nerzh/telegram-vapor-bot", .upToNextMajor(from: "1.0.2")),
-        .package(url: "https://github.com/apple/swift-nio-extras.git", .upToNextMajor(from: "1.12.0"))
     ],
     targets: [
         .target(
@@ -24,7 +23,6 @@ let package = Package(
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "telegram-vapor-bot", package: "telegram-vapor-bot"),
-                .product(name: "swift-nio-extras", package: "swift-nio-extras")
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of

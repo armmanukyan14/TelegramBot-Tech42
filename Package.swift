@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "tgbot",
     platforms: [
-       .macOS(.v12)
+        .macOS(.v12)
     ],
     dependencies: [
         // 💧 A server-side Swift web framework.
@@ -13,11 +13,15 @@ let package = Package(
         .package(url: "https://github.com/vapor/fluent-postgres-driver.git", from: "2.0.0"),
         .package(url: "https://github.com/vapor/leaf.git", from: "4.0.0-rc"),
         .package(url: "https://github.com/nerzh/telegram-vapor-bot", .upToNextMajor(from: "1.0.2")),
+//        .package(url: "https://github.com/apple/swift-nio.git", from: "2.34.0")
     ],
     targets: [
         .target(
             name: "App",
             dependencies: [
+//                .library(name: "NIOExtras", targets: ["NIOExtras"]),
+//                .library(name: "NIOSOCKS", targets: ["NIOSOCKS"]),
+//                .library(name: "NIOHTTPCompression", targets: ["NIOHTTPCompression"]),
                 .product(name: "Fluent", package: "fluent"),
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
                 .product(name: "Leaf", package: "leaf"),

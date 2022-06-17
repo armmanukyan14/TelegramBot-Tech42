@@ -23,7 +23,8 @@ let package = Package(
                 .product(name: "FluentPostgresDriver", package: "fluent-postgres-driver"),
                 .product(name: "Leaf", package: "leaf"),
                 .product(name: "Vapor", package: "vapor"),
-                .product(name: "telegram-vapor-bot", package: "telegram-vapor-bot")
+                .product(name: "telegram-vapor-bot", package: "telegram-vapor-bot"),
+                .product(name: "swift-nio-extras", package: "swift-nio-extras")
             ],
             swiftSettings: [
                 // Enable better optimizations when building in Release configuration. Despite the use of

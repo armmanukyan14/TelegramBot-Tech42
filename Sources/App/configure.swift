@@ -21,8 +21,11 @@ public func configure(_ app: Application) throws {
 
     app.views.use(.leaf)
 
-    app.http.server.configuration.hostname = "10.106.0.2"
-    app.http.server.configuration.port = 20
+    app.http.server.configuration.hostname = "0.0.0.0"
+    app.http.server.configuration.port = 80
+    
+//    app.http.server.configuration.hostname = "10.106.0.2"
+//    app.http.server.configuration.port = 20
 
     let tgApi: String = "5525210799:AAHV9yk-6uqBns7iYAFz2t2t63iYkmw-Isg"
     let connection: TGConnectionPrtcl = TGLongPollingConnection()

@@ -25,9 +25,40 @@ final class DefaultBotHandlers {
         commandFAQ1Handler(app: app, bot: bot)
         commandFAQ2Handler(app: app, bot: bot)
         commandFAQ3Handler(app: app, bot: bot)
+        imageHandler(app: app, bot: bot)
     }
 
     // MARK: - Default
+    
+    private static func imageHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGMessageHandler(filters: (.all)) { update, bot in
+            guard let userId = update.message?.from?.id else { fatalError("user id not found") }
+            if let mediaID = update.message?.photo?.last?.fileId {
+                try? bot.getFile(params: TGGetFileParams(fileId: mediaID)).whenSuccess({ file in
+                    guard let filePath = file.filePath else { return }
+                    let url = "https://api.telegram.org/file/bot\("5525210799:AAHV9yk-6uqBns7iYAFz2t2t63iYkmw-Isg")/\(filePath)"
+//                    try? update.message?.reply(text: url, bot: bot)
+                })
+                
+                guard let messageID = update.message?.messageId else {fatalError("message id not found")}
+                let params: TGForwardMessageParams = .init(chatId: .chat(1339367008),
+                                                           fromChatId: .chat(userId),
+                                                           messageId: messageID)
+                let messageParams: TGSendMessageParams = .init(chatId: .chat(update.message!.chat.id),
+                                                               text: """
+                                                                    🔄Your payment is being verified.
+                                                                    
+                                                                    🤵🏻‍♀️Our team members will contact you soon.
+                                                                    
+                                                                    ☎️You can contact us for any questions - 012420042.
+                                                                    """)
+                try bot.forwardMessage(params: params)
+                try bot.sendMessage(params: messageParams)
+            }
+        }
+        
+        bot.connection.dispatcher.add(handler)
+    }
     
     /// add handler for all messages unless command "/ping"
     private static func defaultHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -46,7 +77,8 @@ final class DefaultBotHandlers {
                                                  !.command.names(["/2"]) &&
                                                  !.command.names(["/3"]) &&
                                                  !.command.names(["/4"]) &&
-                                                 !.command.names(["/5"])
+                                                 !.command.names(["/5"]) &&
+                                                 !.photo
                                                 )) { update, bot in
             let params: TGSendMessageParams = .init(chatId: .chat(update.message!.chat.id), text: "Please select from menu")
             try bot.sendMessage(params: params)
@@ -59,8 +91,9 @@ final class DefaultBotHandlers {
     /// add handler for command "/show_buttons" - show message with buttons
         private static func commandStartHandler(app: Vapor.Application, bot: TGBotPrtcl) {
             let handler = TGCommandHandler(commands: ["/start"]) { update, bot in
-                guard let userId = update.message?.from?.id else { fatalError("user id not found") }
-
+                guard let userId = update.message?.from?.id
+                else { fatalError("user id not found") }
+                
                 let keyboard = [
                     [TGKeyboardButton(text: "/About ℹ️")],
                     [TGKeyboardButton(text: "/Courses 📚")],
@@ -75,6 +108,8 @@ final class DefaultBotHandlers {
 
                 try bot.sendMessage(params: params)
             }
+            
+            
 
             bot.connection.dispatcher.add(handler)
         }

@@ -10,7 +10,7 @@ import Vapor
 import telegram_vapor_bot
 
 final class DefaultBotHandlers {
-
+    
     static func addHandlers(app: Vapor.Application, bot: TGBotPrtcl) {
         defaultHandler(app: app, bot: bot)
         commandStartHandler(app: app, bot: bot)
@@ -25,9 +25,12 @@ final class DefaultBotHandlers {
         commandFAQ1Handler(app: app, bot: bot)
         commandFAQ2Handler(app: app, bot: bot)
         commandFAQ3Handler(app: app, bot: bot)
+        commandPaymentHandler(app: app, bot: bot)
         imageHandler(app: app, bot: bot)
+        paymentHandler(app: app, bot: bot)
+//        FAQHandler(app: app, bot: bot)
     }
-
+    
     // MARK: - Default
     
     private static func imageHandler(app: Vapor.Application, bot: TGBotPrtcl) {
@@ -37,7 +40,7 @@ final class DefaultBotHandlers {
                 try? bot.getFile(params: TGGetFileParams(fileId: mediaID)).whenSuccess({ file in
                     guard let filePath = file.filePath else { return }
                     let url = "https://api.telegram.org/file/bot\("5525210799:AAHV9yk-6uqBns7iYAFz2t2t63iYkmw-Isg")/\(filePath)"
-//                    try? update.message?.reply(text: url, bot: bot)
+                    //                    try? update.message?.reply(text: url, bot: bot)
                 })
                 
                 guard let messageID = update.message?.messageId else {fatalError("message id not found")}
@@ -46,11 +49,9 @@ final class DefaultBotHandlers {
                                                            messageId: messageID)
                 let messageParams: TGSendMessageParams = .init(chatId: .chat(update.message!.chat.id),
                                                                text: """
-                                                                    🔄Your payment is being verified.
+                                                                    🔄Ձեր վճարումը ստուգվում է։ Մեր մասնագետները շուտով կկապվեն Ձեզ հետ։
                                                                     
-                                                                    🤵🏻‍♀️Our team members will contact you soon.
-                                                                    
-                                                                    ☎️You can contact us for any questions - 012420042.
+                                                                    ☎️Հարցերի դեպքում զանգահարեք - 012420042.
                                                                     """)
                 try bot.forwardMessage(params: params)
                 try bot.sendMessage(params: messageParams)
@@ -60,12 +61,13 @@ final class DefaultBotHandlers {
         bot.connection.dispatcher.add(handler)
     }
     
-    /// add handler for all messages unless command "/ping"
+    /// add handler for all messages unless this commands...
     private static func defaultHandler(app: Vapor.Application, bot: TGBotPrtcl) {
         let handler = TGMessageHandler(filters: (.all &&
                                                  !.command.names(["/About"]) &&
                                                  !.command.names(["/Courses"]) &&
                                                  !.command.names(["/FAQ"]) &&
+                                                 !.command.names(["/Payment"]) &&
                                                  !.command.names(["/start"]) &&
                                                  !.command.names(["/QA"]) &&
                                                  !.command.names(["/register_for_QA"]) &&
@@ -83,36 +85,78 @@ final class DefaultBotHandlers {
             let params: TGSendMessageParams = .init(chatId: .chat(update.message!.chat.id), text: "Please select from menu")
             try bot.sendMessage(params: params)
         }
+        
+        bot.connection.dispatcher.add(handler)
+    }
+    
+    private static func paymentHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGMessageHandler(filters: .command.names(["/Վճարումներ"])) { update, bot in
+            let params: TGSendMessageParams = .init(chatId: .chat(update.message!.chat.id), text: """
+                                                    🤖Խնդրում ենք վճարումը կատարելուց հետո Ձեր վճարման կտրոնը նկարել և ուղարկել այս չաթ-բոտում
+                                                
+                                                💳Հաշվեհամար - 2052822170041001
+                                                
+                                                ®️Ընկերության Անվանում` «Թեք Էդուքեյշն» ՍՊԸ
+                                                
+                                                🏦Բանկ - Ինեկոբանկ
+                                                """)
+            try bot.sendMessage(params: params)
+        }
+        
+        bot.connection.dispatcher.add(handler)
+    }
+    
+    private static func FAQHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGMessageHandler(name: "Հաճախ տրվող հարցեր") { update, bot in
+            guard let userId = update.message?.from?.id else { fatalError("user id not found") }
+            
+            let keyboard = [
+                [TGKeyboardButton(text: "/1 Ես չունեմ ծրագրավորման գիտելիքներ։ Արդյո՞ք կարող եմ սովորել Tech42-ում։")],
+                [TGKeyboardButton(text: "/2 Ո՞ր ծրագրավորման լեզուն խորհուրդ կտաք սովորել սկսնակների համար։")],
+                [TGKeyboardButton(text: "/3 Արդյո՞ք դասընթացների ավարտին ապահովում եք աշխատանքով։")],
+                [TGKeyboardButton(text: "/4 Որքա՞ն է կազմում դասընթացի արժեքը և տևողությունը։")],
+                [TGKeyboardButton(text: "/5 Արդյո՞ք սեփական համակարգչի առկայությունը պարտադիր է։")],
+                [TGKeyboardButton(text: "/6 Անհատական պարապմունքներ ունե՞ք։")]
+            ]
+            
+            let replyKeyboardMarkup = TGReplyKeyboardMarkup(keyboard: keyboard, resizeKeyboard: true, oneTimeKeyboard: false, inputFieldPlaceholder: "Type /start to go back", selective: false)
+            
+            let params: TGSendMessageParams = .init(chatId: .chat(userId),
+                                                    text: "Please select from menu",
+                                                    replyMarkup: .replyKeyboardMarkup(replyKeyboardMarkup))
+            
+            try bot.sendMessage(params: params)
+        }
+        
         bot.connection.dispatcher.add(handler)
     }
     
     // MARK: - Start
     
     /// add handler for command "/show_buttons" - show message with buttons
-        private static func commandStartHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-            let handler = TGCommandHandler(commands: ["/start"]) { update, bot in
-                guard let userId = update.message?.from?.id
-                else { fatalError("user id not found") }
-                
-                let keyboard = [
-                    [TGKeyboardButton(text: "/About ℹ️")],
-                    [TGKeyboardButton(text: "/Courses 📚")],
-                    [TGKeyboardButton(text: "/FAQ❔")]
-                ]
-
-                let replyKeyboardMarkup = TGReplyKeyboardMarkup(keyboard: keyboard, resizeKeyboard: true, oneTimeKeyboard: false, inputFieldPlaceholder: "Type something like /About", selective: false)
-                
-                let params: TGSendMessageParams = .init(chatId: .chat(userId),
-                                                        text: "Please select from menu",
-                                                        replyMarkup: .replyKeyboardMarkup(replyKeyboardMarkup))
-
-                try bot.sendMessage(params: params)
-            }
+    private static func commandStartHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/start"]) { update, bot in
+            guard let userId = update.message?.from?.id
+            else { fatalError("user id not found") }
             
+            let keyboard = [
+                [TGKeyboardButton(text: "Գլխավոր 🏠")],
+                [TGKeyboardButton(text: "Դասընթացներ 📚")],
+                [TGKeyboardButton(text: "Հաճախ տրվող հարցեր❔")],
+                [TGKeyboardButton(text: "Վճարումներ 💵")]
+            ]
             
-
-            bot.connection.dispatcher.add(handler)
+            let replyKeyboardMarkup = TGReplyKeyboardMarkup(keyboard: keyboard, resizeKeyboard: true, oneTimeKeyboard: false, inputFieldPlaceholder: "Type something like /About", selective: false)
+            
+            let params: TGSendMessageParams = .init(chatId: .chat(userId),
+                                                    text: "Please select from menu",
+                                                    replyMarkup: .replyKeyboardMarkup(replyKeyboardMarkup))
+            
+            try bot.sendMessage(params: params)
         }
+        
+        bot.connection.dispatcher.add(handler)
+    }
     
     // MARK: - Site
     
@@ -132,12 +176,31 @@ final class DefaultBotHandlers {
         bot.connection.dispatcher.add(handler)
     }
     
+    private static func commandPaymentHandler(app: Vapor.Application, bot: TGBotPrtcl) {
+        let handler = TGCommandHandler(commands: ["/Payment"]) { update, bot in
+            try update.message?.reply(text: """
+                                                🤖Խնդրում ենք վճարումը կատարելուց հետո Ձեր վճարման կտրոնը նկարել և ուղարկել այս չաթ-բոտում
+                                            
+                                            💳Հաշվեհամար - 2052822170041001
+                                            
+                                            ®️Ընկերության Անվանում` «Թեք Էդուքեյշն» ՍՊԸ
+                                            
+                                            🏦Բանկ - Ինեկոբանկ
+                                            """,
+                                      bot: bot)
+        }
+        bot.connection.dispatcher.add(handler)
+    }
+    
+    
+    
+    
     // MARK: - Courses
     
     private static func commanCoursesHandler(app: Vapor.Application, bot: TGBotPrtcl) {
         let handler = TGCommandHandler(commands: ["/Courses"]) { update, bot in
             guard let userId = update.message?.from?.id else { fatalError("user id not found") }
-
+            
             let keyboard = [
                 [TGKeyboardButton(text: "/QA"), TGKeyboardButton(text: "/PM")],
                 [TGKeyboardButton(text: "/iOS"), TGKeyboardButton(text: "/Sales")],
@@ -146,16 +209,16 @@ final class DefaultBotHandlers {
                 [TGKeyboardButton(text: "/Python"), TGKeyboardButton(text: "/Recruitment")]
             ]
             
-
+            
             let replyKeyboardMarkup = TGReplyKeyboardMarkup(keyboard: keyboard, resizeKeyboard: true, oneTimeKeyboard: false, inputFieldPlaceholder: "Type /start to go back", selective: false)
             
             let params: TGSendMessageParams = .init(chatId: .chat(userId),
                                                     text: "Please select from menu",
                                                     replyMarkup: .replyKeyboardMarkup(replyKeyboardMarkup))
-
+            
             try bot.sendMessage(params: params)
         }
-
+        
         bot.connection.dispatcher.add(handler)
     }
     
@@ -165,7 +228,7 @@ final class DefaultBotHandlers {
     private static func commanFAQHandler(app: Vapor.Application, bot: TGBotPrtcl) {
         let handler = TGCommandHandler(commands: ["/FAQ"]) { update, bot in
             guard let userId = update.message?.from?.id else { fatalError("user id not found") }
-
+            
             let keyboard = [
                 [TGKeyboardButton(text: "/1 Ես չունեմ ծրագրավորման գիտելիքներ։ Արդյո՞ք կարող եմ սովորել Tech42-ում։")],
                 [TGKeyboardButton(text: "/2 Ո՞ր ծրագրավորման լեզուն խորհուրդ կտաք սովորել սկսնակների համար։")],
@@ -174,16 +237,16 @@ final class DefaultBotHandlers {
                 [TGKeyboardButton(text: "/5 Արդյո՞ք սեփական համակարգչի առկայությունը պարտադիր է։")],
                 [TGKeyboardButton(text: "/6 Անհատական պարապմունքներ ունե՞ք։")]
             ]
-
+            
             let replyKeyboardMarkup = TGReplyKeyboardMarkup(keyboard: keyboard, resizeKeyboard: true, oneTimeKeyboard: false, inputFieldPlaceholder: "Type /start to go back", selective: false)
             
             let params: TGSendMessageParams = .init(chatId: .chat(userId),
                                                     text: "Please select from menu",
                                                     replyMarkup: .replyKeyboardMarkup(replyKeyboardMarkup))
-
+            
             try bot.sendMessage(params: params)
         }
-
+        
         bot.connection.dispatcher.add(handler)
     }
     
@@ -216,27 +279,27 @@ final class DefaultBotHandlers {
     // MARK: - QA
     
     private static func commandQAHandler(app: Vapor.Application, bot: TGBotPrtcl) {
-           let handler = TGCommandHandler(commands: ["/QA"]) { update, bot in
-               guard let userId = update.message?.from?.id else { fatalError("user id not found") }
-               let buttons: [[TGInlineKeyboardButton]] = [
-                   [.init(text: "📝Register for QA", url: "http://tech42.am/ios-fundamentals.html")]
-               ]
-               
-               
-               let keyboard: TGInlineKeyboardMarkup = .init(inlineKeyboard: buttons)
-               let params: TGSendMessageParams = .init(chatId: .chat(userId),
-                                                       text: """
+        let handler = TGCommandHandler(commands: ["/QA"]) { update, bot in
+            guard let userId = update.message?.from?.id else { fatalError("user id not found") }
+            let buttons: [[TGInlineKeyboardButton]] = [
+                [.init(text: "📝Register for QA", url: "http://tech42.am/ios-fundamentals.html")]
+            ]
+            
+            
+            let keyboard: TGInlineKeyboardMarkup = .init(inlineKeyboard: buttons)
+            let params: TGSendMessageParams = .init(chatId: .chat(userId),
+                                                    text: """
                                                         ⏰Duration - 2 months
                                                         
                                                         💵Cost - 50.000AMD per month
                                                         
                                                         👩🏻‍💻Tutor - Lusine Simonyan(from EPAM)
                                                         """,
-                                                       replyMarkup: .inlineKeyboardMarkup(keyboard))
-               try bot.sendMessage(params: params)
-           }
-           bot.connection.dispatcher.add(handler)
-       }
+                                                    replyMarkup: .inlineKeyboardMarkup(keyboard))
+            try bot.sendMessage(params: params)
+        }
+        bot.connection.dispatcher.add(handler)
+    }
     
     // MARK: - PM
     
